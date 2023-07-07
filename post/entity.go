@@ -2,6 +2,7 @@ package post
 
 import (
 	"github.com/google/uuid"
+	"github.com/n1207n/real-time-post-recommender/persistance"
 	"time"
 )
 
@@ -20,5 +21,15 @@ func NewPost(title string, body string) *Post {
 		Body:      body,
 		Votes:     0,
 		Timestamp: time.Now(),
+	}
+}
+
+func (p *Post) Save() {
+	stmt := persistance.SqlServiceInstance.DbClient.Rebind(
+		"INSERT INTO posts (id, title, body, votes, timestamp) VALUES (:id, :title, :body, :votes, :timestamp)",
+	)
+	_, err := persistance.SqlServiceInstance.DbClient.NamedExec(stmt, p)
+	if err != nil {
+		panic(err)
 	}
 }

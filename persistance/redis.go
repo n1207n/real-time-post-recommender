@@ -14,8 +14,8 @@ type CacheService struct {
 var _ CacheService = CacheService{}
 
 var (
-	cacheService *CacheService
-	ctx          = context.Background()
+	CacheServiceInstance *CacheService
+	ctx                  = context.Background()
 )
 
 func NewCacheService(redisHost string, redisPort int, redisDB int) *CacheService {
@@ -33,9 +33,9 @@ func NewCacheService(redisHost string, redisPort int, redisDB int) *CacheService
 
 	fmt.Printf("\nRedis started successfully: pong message = {%s}", pong)
 
-	cacheService = &CacheService{
+	CacheServiceInstance = &CacheService{
 		redisClient: redisClient,
 	}
 
-	return cacheService
+	return CacheServiceInstance
 }

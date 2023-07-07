@@ -8,14 +8,14 @@ import (
 )
 
 type SqlService struct {
-	dbClient *sqlx.DB
+	DbClient *sqlx.DB
 }
 
 // Compilation check
 var _ SqlService = SqlService{}
 
 // Singleton
-var sqlService *SqlService
+var SqlServiceInstance *SqlService
 
 func NewSqlService(dbUsername string, dbPassword string, dbHost string, dbPort int, dbName string) *SqlService {
 	srcName := fmt.Sprintf(
@@ -27,8 +27,6 @@ func NewSqlService(dbUsername string, dbPassword string, dbHost string, dbPort i
 		dbName,
 	)
 
-	log.Println(srcName)
-
 	client, err := sqlx.Connect("postgres", srcName)
 	if err != nil {
 		log.Fatalf("Error connecting postgres = {%v}", err)
@@ -37,9 +35,9 @@ func NewSqlService(dbUsername string, dbPassword string, dbHost string, dbPort i
 	log.Printf("\nPostgres connected")
 
 	// Singleton assignment
-	sqlService = &SqlService{
-		dbClient: client,
+	SqlServiceInstance = &SqlService{
+		DbClient: client,
 	}
 
-	return sqlService
+	return SqlServiceInstance
 }
