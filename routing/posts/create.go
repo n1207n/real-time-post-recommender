@@ -20,7 +20,7 @@ func CreatePost(context *gin.Context) {
 	}
 
 	newPost := post.NewPost(payload.Title, payload.Body)
-	post.PostServiceInstance.CreatePost(newPost)
+	post.PostServiceInstance.Create(newPost)
 
 	context.JSON(http.StatusOK, newPost)
 }
