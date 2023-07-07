@@ -23,12 +23,10 @@ func run() error {
 	dbHost, dbPort, dbUsername, dbPassword, dbName := loadDBEnvVariables()
 	redisHost, redisPort, redisDb := loadRedisEnvVariables()
 
-	r := gin.Default()
+	initializeServices(dbUsername, dbPassword, dbHost, dbPort, dbName, redisHost, redisPort, redisDb)
 
+	r := gin.Default()
 	routing.BuildRouters(r)
-	sql.NewSqlService(dbUsername, dbPassword, dbHost, dbPort, dbName)
-	cache.NewCacheService(redisHost, redisPort, redisDb)
-	post.NewPostService()
 
 	address := fmt.Sprintf(":%d", apiPort)
 
@@ -38,6 +36,12 @@ func run() error {
 	}
 
 	return nil
+}
+
+func initializeServices(dbUsername string, dbPassword string, dbHost string, dbPort int, dbName string, redisHost string, redisPort int, redisDb int) {
+	sql.NewSqlService(dbUsername, dbPassword, dbHost, dbPort, dbName)
+	cache.NewCacheService(redisHost, redisPort, redisDb)
+	post.NewPostService()
 }
 
 func loadDBEnvVariables() (string, int, string, string, string) {

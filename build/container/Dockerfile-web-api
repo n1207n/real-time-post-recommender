@@ -12,6 +12,15 @@ COPY . .
 
 CMD ["go", "run", "cmd/web_server.go"]
 
+# Test stage
+FROM development as test
+
+WORKDIR /app
+
+ENV CGO_ENABLED=0
+
+CMD ["go", "test", "./..."]
+
 # Build stage
 FROM development AS build
 

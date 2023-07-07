@@ -6,24 +6,30 @@ import (
 	"math/rand"
 )
 
-const (
-	MIN_PARAGRAPH = 5
-	MAX_PARAGRAPH = 10
-	MIN_SENTENCE  = 5
-	MAX_SENTENCE  = 10
-	MIN_WORD      = 10
-	MAX_WORD      = 20
-)
-
-func GeneratePostBody() string {
-	paragraphSize := int(math.Ceil(rand.Float64() * (MAX_PARAGRAPH - MIN_PARAGRAPH)))
-	sentenceSize := int(math.Ceil(rand.Float64() * (MAX_SENTENCE - MIN_SENTENCE)))
-	wordSize := int(math.Ceil(rand.Float64() * (MAX_WORD - MIN_WORD)))
-
-	return gofakeit.Paragraph(paragraphSize, sentenceSize, wordSize, "\n")
+type FakerInterface interface {
+	Paragraph(paragraphs, sentences, words int, separator string) string
+	Sentence(wordCount int) string
 }
 
-func GeneratePostTitle() string {
-	wordSize := int(math.Ceil(rand.Float64() * (MAX_WORD - MIN_WORD)))
-	return gofakeit.Sentence(wordSize)
+type Faker struct{}
+
+func (f *Faker) Paragraph(paragraphs, sentences, words int, separator string) string {
+	return gofakeit.Paragraph(paragraphs, sentences, words, separator)
+}
+
+func (f *Faker) Sentence(wordCount int) string {
+	return gofakeit.Sentence(wordCount)
+}
+
+func GeneratePostBody(minParagraph int, maxParagraph int, minSentence int, maxSentence int, minWord int, maxWord int, faker FakerInterface) string {
+	paragraphSize := int(math.Ceil(rand.Float64() * float64(maxParagraph-minParagraph)))
+	sentenceSize := int(math.Ceil(rand.Float64() * float64(maxSentence-minSentence)))
+	wordSize := int(math.Ceil(rand.Float64() * float64(maxWord-minWord)))
+
+	return faker.Paragraph(paragraphSize, sentenceSize, wordSize, "\n")
+}
+
+func GeneratePostTitle(minWord int, maxWord int, faker FakerInterface) string {
+	wordSize := int(math.Ceil(rand.Float64() * float64(maxWord-minWord)))
+	return faker.Sentence(wordSize)
 }

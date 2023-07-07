@@ -16,6 +16,9 @@ Real-time post recommender based on old hackernews ranking algo
 ### Get Postgres shell
 `docker-compose -f deployments/docker-compose.yaml exec -it db psql -U app -d app`
 
+### Run tests
+`./scripts/run_tests.sh`
+
 ### DB Migrations
 #### Forward migration
 - docker-compose -f deployments/docker-compose.yaml --profile tools run migrate up

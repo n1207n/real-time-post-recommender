@@ -9,14 +9,23 @@ import (
 )
 
 var _ gentleman.Client = gentleman.Client{}
+var _ post.Faker = post.Faker{}
 
 var (
 	apiClient *gentleman.Client = gentleman.New()
+	faker                       = &post.Faker{}
 )
 
 const (
-	DATA_N   = 100_000
-	WORKER_N = 4
+	MinParagraph = 5
+	MaxParagraph = 10
+	MinSentence  = 5
+	MaxSentence  = 10
+	MinWord      = 10
+	MaxWord      = 20
+
+	DataN   = 100_000
+	WorkerN = 4
 )
 
 func main() {
@@ -27,7 +36,7 @@ func main() {
 
 	fmt.Printf("Post fake data generator started\n")
 
-	for _ = range [WORKER_N]int{} {
+	for _ = range [WorkerN]int{} {
 		wg.Add(1)
 		go createFakePosts(wg)
 	}
@@ -36,8 +45,11 @@ func main() {
 }
 
 func createFakePosts(wg *sync.WaitGroup) {
-	for i := 0; i < DATA_N; i++ {
-		data := map[string]string{"title": post.GeneratePostTitle(), "body": post.GeneratePostBody()}
+	for i := 0; i < DataN; i++ {
+		data := map[string]string{
+			"title": post.GeneratePostTitle(MinWord, MaxWord, faker),
+			"body":  post.GeneratePostBody(MinParagraph, MaxParagraph, MinSentence, MaxSentence, MinWord, MaxWord, faker),
+		}
 
 		req := apiClient.Request()
 		req.Path("/posts")
