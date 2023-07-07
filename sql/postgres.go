@@ -1,4 +1,4 @@
-package persistance
+package sql
 
 import (
 	"fmt"
@@ -8,14 +8,14 @@ import (
 )
 
 type SqlService struct {
-	DbClient *sqlx.DB
+	Client *sqlx.DB
 }
 
 // Compilation check
 var _ SqlService = SqlService{}
 
 // Singleton
-var SqlServiceInstance *SqlService
+var DB *SqlService
 
 func NewSqlService(dbUsername string, dbPassword string, dbHost string, dbPort int, dbName string) *SqlService {
 	srcName := fmt.Sprintf(
@@ -35,9 +35,9 @@ func NewSqlService(dbUsername string, dbPassword string, dbHost string, dbPort i
 	log.Printf("\nPostgres connected")
 
 	// Singleton assignment
-	SqlServiceInstance = &SqlService{
-		DbClient: client,
+	DB = &SqlService{
+		Client: client,
 	}
 
-	return SqlServiceInstance
+	return DB
 }

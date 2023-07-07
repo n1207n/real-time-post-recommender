@@ -56,7 +56,7 @@ func createFakePosts(wg *sync.WaitGroup) {
 			continue
 		}
 
-		fmt.Printf("Status: %d - Body: %s\n\n", res.String())
+		fmt.Printf("Status: %d - Body: %s\n\n", res.StatusCode, res.String())
 	}
 
 	wg.Done()

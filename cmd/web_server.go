@@ -3,8 +3,10 @@ package main
 import (
 	"fmt"
 	"github.com/gin-gonic/gin"
-	"github.com/n1207n/real-time-post-recommender/persistance"
+	"github.com/n1207n/real-time-post-recommender/cache"
+	"github.com/n1207n/real-time-post-recommender/post"
 	"github.com/n1207n/real-time-post-recommender/routing"
+	"github.com/n1207n/real-time-post-recommender/sql"
 	"log"
 	"os"
 	"strconv"
@@ -24,8 +26,9 @@ func run() error {
 	r := gin.Default()
 
 	routing.BuildRouters(r)
-	persistance.NewSqlService(dbUsername, dbPassword, dbHost, dbPort, dbName)
-	persistance.NewCacheService(redisHost, redisPort, redisDb)
+	sql.NewSqlService(dbUsername, dbPassword, dbHost, dbPort, dbName)
+	cache.NewCacheService(redisHost, redisPort, redisDb)
+	post.NewPostService()
 
 	address := fmt.Sprintf(":%d", apiPort)
 
