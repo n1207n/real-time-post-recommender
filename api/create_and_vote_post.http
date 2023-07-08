@@ -1,0 +1,42 @@
+POST localhost:8080/posts
+Content-Type: application/json
+Accept: application/json
+
+{
+  "title": "lorem ipsum",
+  "body": "lorem ipsum"
+}
+
+> {%
+    client.global.set("id", response.body.id)
+%}
+
+###
+POST localhost:8080/posts/vote
+Content-Type: application/json
+Accept: application/json
+
+{
+  "id": "{{id}}",
+  "is_upvote": true
+}
+
+###
+POST localhost:8080/posts/vote
+Content-Type: application/json
+Accept: application/json
+
+{
+  "id": "{{id}}",
+  "is_upvote": true
+}
+
+###
+POST localhost:8080/posts/vote
+Content-Type: application/json
+Accept: application/json
+
+{
+  "id": "{{id}}",
+  "is_upvote": false
+}

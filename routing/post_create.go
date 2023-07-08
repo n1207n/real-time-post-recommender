@@ -17,6 +17,7 @@ func CreatePost(context *gin.Context) {
 
 	if err := context.ShouldBindJSON(&payload); err != nil {
 		context.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
 	}
 
 	newPost := post.NewPost(payload.Title, payload.Body)

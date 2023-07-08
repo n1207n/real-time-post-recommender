@@ -9,4 +9,5 @@ func BuildRouters(r *gin.Engine) {
 	r.GET("/", Index)
 	r.GET("/posts", ListPosts)
 	r.POST("/posts", CreatePost)
+	r.POST("/posts/vote", VotePost)
 }

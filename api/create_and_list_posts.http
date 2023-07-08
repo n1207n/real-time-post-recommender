@@ -1,0 +1,53 @@
+POST localhost:8080/posts
+Content-Type: application/json
+Accept: application/json
+
+{
+  "title": "lorem ipsum",
+  "body": "lorem ipsum"
+}
+
+###
+POST localhost:8080/posts
+Content-Type: application/json
+Accept: application/json
+
+{
+  "title": "lorem ipsum",
+  "body": "lorem ipsum"
+}
+
+###
+POST localhost:8080/posts
+Content-Type: application/json
+Accept: application/json
+
+{
+  "title": "lorem ipsum",
+  "body": "lorem ipsum"
+}
+
+###
+POST localhost:8080/posts
+Content-Type: application/json
+Accept: application/json
+
+{
+  "title": "lorem ipsum",
+  "body": "lorem ipsum"
+}
+
+###
+POST localhost:8080/posts
+Content-Type: application/json
+Accept: application/json
+
+{
+  "title": "lorem ipsum",
+  "body": "lorem ipsum"
+}
+
+###
+GET localhost:8080/posts
+Content-Type: application/json
+Accept: application/json
