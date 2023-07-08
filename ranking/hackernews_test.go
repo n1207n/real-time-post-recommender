@@ -24,7 +24,7 @@ func setUp() {
 
 	cache.NewCacheService(redisHost, redisPort, redisDb)
 	ranker = &HackerNewsRanker{
-		cacheInstance: cache.Cache,
+		CacheInstance: cache.Cache,
 	}
 }
 
@@ -37,14 +37,14 @@ func TestHackerNewsRanker_PushPostScore(t *testing.T) {
 	assert.NoError(t, err)
 
 	key := fmt.Sprintf("post-scores-%s", newPost.Timestamp.Format("2006-01-02"))
-	ctx := ranker.cacheInstance.Ctx
+	ctx := ranker.CacheInstance.Ctx
 
-	result, keyErr := ranker.cacheInstance.RedisClient.Exists(ctx, key).Result()
+	result, keyErr := ranker.CacheInstance.RedisClient.Exists(ctx, key).Result()
 	assert.NoError(t, keyErr)
 	assert.Equal(t, result, int64(1))
 
 	// Cleanup
-	ranker.cacheInstance.RedisClient.ZRem(ctx, key, newPost.ID.String())
+	ranker.CacheInstance.RedisClient.ZRem(ctx, key, newPost.ID.String())
 }
 
 func TestHackerNewsRanker_calculateScore(t *testing.T) {

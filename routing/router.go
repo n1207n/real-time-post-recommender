@@ -8,6 +8,7 @@ import (
 func BuildRouters(r *gin.Engine) {
 	r.GET("/", Index)
 	r.GET("/posts", ListPosts)
+	r.GET("/posts/:id", GetPost)
 	r.POST("/posts", CreatePost)
 	r.POST("/posts/vote", VotePost)
 }

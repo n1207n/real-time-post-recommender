@@ -21,7 +21,7 @@ func NewPostService() *PostService {
 	return PostServiceInstance
 }
 
-func (s *PostService) Create(newPost *Post) uuid.UUID {
+func (s *PostService) Create(newPost Post) uuid.UUID {
 	var lastInsertedUUID uuid.UUID
 
 	err := s.db.Client.QueryRow(
@@ -46,12 +46,21 @@ func (s *PostService) List(limit int, offset int) []Post {
 	return results
 }
 
-func (s *PostService) Vote(postId uuid.UUID, isUpvote bool) error {
+func (s *PostService) GetByID(postId uuid.UUID) (*Post, error) {
 	var post Post
 
 	err := sql.DB.Client.Get(&post, "SELECT * FROM posts WHERE id = $1", postId.String())
 	if err != nil {
-		return err
+		return nil, err
+	}
+
+	return &post, nil
+}
+
+func (s *PostService) Vote(postId uuid.UUID, isUpvote bool) (*Post, error) {
+	post, err := s.GetByID(postId)
+	if err != nil {
+		return nil, err
 	}
 
 	if isUpvote {
@@ -61,5 +70,8 @@ func (s *PostService) Vote(postId uuid.UUID, isUpvote bool) error {
 	}
 
 	_, err = sql.DB.Client.Exec(`UPDATE posts SET votes = $1 WHERE id = $2`, post.Votes, postId.String())
-	return err
+	if err != nil {
+		return nil, err
+	}
+	return post, nil
 }

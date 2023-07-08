@@ -5,6 +5,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/n1207n/real-time-post-recommender/cache"
 	"github.com/n1207n/real-time-post-recommender/post"
+	"github.com/n1207n/real-time-post-recommender/ranking"
 	"github.com/n1207n/real-time-post-recommender/routing"
 	"github.com/n1207n/real-time-post-recommender/sql"
 	"github.com/n1207n/real-time-post-recommender/utils"
@@ -41,4 +42,5 @@ func initializeServices(dbUsername string, dbPassword string, dbHost string, dbP
 	sql.NewSqlService(dbUsername, dbPassword, dbHost, dbPort, dbName)
 	cache.NewCacheService(redisHost, redisPort, redisDb)
 	post.NewPostService()
+	ranking.NewRanker()
 }

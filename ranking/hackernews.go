@@ -10,7 +10,7 @@ import (
 )
 
 type HackerNewsRanker struct {
-	cacheInstance *cache.CacheService
+	CacheInstance *cache.CacheService
 }
 
 var _ HackerNewsRanker = HackerNewsRanker{}
@@ -18,6 +18,11 @@ var _ HackerNewsRanker = HackerNewsRanker{}
 var (
 	Ranker *HackerNewsRanker
 )
+
+func NewRanker() *HackerNewsRanker {
+	Ranker = &HackerNewsRanker{CacheInstance: cache.Cache}
+	return Ranker
+}
 
 // HackerNewsScore calculates the ranking score based on public formula of HackerNews ranking
 // `score = (points - 1) / (age + 2)^gravity`
@@ -31,7 +36,7 @@ func (r *HackerNewsRanker) calculateScore(points int, creationTime time.Time, gr
 }
 
 func (r *HackerNewsRanker) PushPostScore(p *post.Post) error {
-	ctx := r.cacheInstance.Ctx
+	ctx := r.CacheInstance.Ctx
 
 	key := fmt.Sprintf("post-scores-%s", p.Timestamp.Format("2006-01-02"))
 

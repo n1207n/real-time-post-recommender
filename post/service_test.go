@@ -28,7 +28,7 @@ func TestPostService_Create(t *testing.T) {
 	setUp()
 
 	newPost := NewPost("Test Title", "Test Body")
-	dbId := postService.Create(newPost)
+	dbId := postService.Create(*newPost)
 
 	// Verify that the post is created successfully
 	var post Post
@@ -48,7 +48,7 @@ func TestPostService_List(t *testing.T) {
 	const dataN = 10
 	for range [dataN]int{} {
 		newPost := NewPost("Test Title", "Test Body")
-		postService.Create(newPost)
+		postService.Create(*newPost)
 	}
 
 	posts := postService.List(dataN, 0)
@@ -60,22 +60,34 @@ func TestPostService_List(t *testing.T) {
 	sql.DB.Client.MustExec("TRUNCATE TABLE posts")
 }
 
+func TestPostService_Get(t *testing.T) {
+	setUp()
+
+	newPost := NewPost("Test Title", "Test Body")
+	postService.Create(*newPost)
+
+	post, err := postService.GetByID(newPost.ID)
+	assert.NoError(t, err)
+
+	assert.NotNil(t, post)
+	assert.Equal(t, post.Title, newPost.Title)
+	assert.Equal(t, post.Body, newPost.Body)
+
+	// Cleanup
+	sql.DB.Client.MustExec("TRUNCATE TABLE posts")
+}
+
 func TestPostService_UpvotePost(t *testing.T) {
 	setUp()
 
 	newPost := NewPost("Test Title", "Test Body")
-	dbId := postService.Create(newPost)
+	dbId := postService.Create(*newPost)
 
-	var post Post
-	err := sql.DB.Client.Get(&post, "SELECT * FROM posts WHERE id = $1", dbId.String())
+	post, err := postService.GetByID(dbId)
 	assert.NoError(t, err)
 
 	// Upvote the post
-	err = postService.Vote(post.ID, true)
-	assert.NoError(t, err)
-
-	// Retrieve the post from the database
-	err = sql.DB.Client.Get(&post, "SELECT * FROM posts WHERE id = $1", dbId.String())
+	post, err = postService.Vote(post.ID, true)
 	assert.NoError(t, err)
 
 	// Assert that the vote count has increased by 1
@@ -89,21 +101,16 @@ func TestPostService_DownvotePost(t *testing.T) {
 	setUp()
 
 	newPost := NewPost("Test Title", "Test Body")
-	dbId := postService.Create(newPost)
+	dbId := postService.Create(*newPost)
 
-	var post Post
-	err := sql.DB.Client.Get(&post, "SELECT * FROM posts WHERE id = $1", dbId.String())
+	post, err := postService.GetByID(dbId)
 	assert.NoError(t, err)
 
 	// Upvote the post
-	err = postService.Vote(post.ID, false)
+	post, err = postService.Vote(post.ID, false)
 	assert.NoError(t, err)
 
-	// Retrieve the post from the database
-	err = sql.DB.Client.Get(&post, "SELECT * FROM posts WHERE id = $1", dbId.String())
-	assert.NoError(t, err)
-
-	// Assert that the vote count has increased by 1
+	// Assert that the vote count has decreased by 1
 	assert.Equal(t, -1, post.Votes)
 
 	// Cleanup
@@ -117,7 +124,7 @@ func TestPostService_Vote_NonExistingPost(t *testing.T) {
 	newPost.ID = uuid.New()
 
 	// Try to upvote the non-existing post
-	err := postService.Vote(newPost.ID, true)
+	_, err := postService.GetByID(newPost.ID)
 	assert.Error(t, err)
 
 	// Cleanup
@@ -128,26 +135,21 @@ func TestPostService_Vote_MultipleVotes(t *testing.T) {
 	setUp()
 
 	newPost := NewPost("Test Title", "Test Body")
-	dbId := postService.Create(newPost)
+	dbId := postService.Create(*newPost)
 
-	var post Post
-	err := sql.DB.Client.Get(&post, "SELECT * FROM posts WHERE id = $1", dbId.String())
+	post, err := postService.GetByID(dbId)
 	assert.NoError(t, err)
 
 	// Upvote the post multiple times
-	err = postService.Vote(post.ID, true)
+	post, err = postService.Vote(post.ID, true)
 	assert.NoError(t, err)
-	err = postService.Vote(post.ID, true)
+	post, err = postService.Vote(post.ID, true)
 	assert.NoError(t, err)
 
 	// Downvote the post multiple times
-	err = postService.Vote(post.ID, false)
+	post, err = postService.Vote(post.ID, false)
 	assert.NoError(t, err)
-	err = postService.Vote(post.ID, false)
-	assert.NoError(t, err)
-
-	// Retrieve the post from the database
-	err = sql.DB.Client.Get(&post, "SELECT * FROM posts WHERE id = $1", dbId.String())
+	post, err = postService.Vote(post.ID, false)
 	assert.NoError(t, err)
 
 	// Assert that the vote count reflects the cumulative effect of the multiple votes
