@@ -10,7 +10,7 @@ RUN go mod download
 
 COPY . .
 
-CMD ["go", "run", "cmd/web_server.go"]
+CMD ["go", "run", "cmd/server/web_server.go"]
 
 # Test stage
 FROM development as test

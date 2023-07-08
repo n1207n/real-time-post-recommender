@@ -19,10 +19,13 @@ Real-time post recommender based on old hackernews ranking algo
 ### Run tests
 `./scripts/run_tests.sh`
 
+### Generate Fake Posts
+`go run cmd/driver/post_generator_driver.go`
+
 ### DB Migrations
 #### Forward migration
-- docker-compose -f deployments/docker-compose.yaml --profile tools run migrate up
+`docker-compose -f deployments/docker-compose.yaml --profile tools run migrate up`
 #### Backward migration
-- docker-compose -f deployments/docker-compose.yaml --profile tools run migrate down
+`docker-compose -f deployments/docker-compose.yaml --profile tools run migrate down`
 #### Fix migration
-- docker-compose -f deployments/docker-compose.yaml --profile tools run migrate force <VERSION>
+`docker-compose -f deployments/docker-compose.yaml --profile tools run migrate force <VERSION>`
