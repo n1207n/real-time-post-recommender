@@ -36,7 +36,7 @@ func (s *PostService) Create(newPost *Post) uuid.UUID {
 }
 
 func (s *PostService) List(limit int, offset int) []Post {
-	var results []Post
+	results := make([]Post, limit)
 
 	err := sql.DB.Client.Select(&results, "SELECT * FROM posts LIMIT $1 OFFSET $2", limit, offset)
 	if err != nil {
