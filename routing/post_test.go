@@ -114,3 +114,95 @@ func TestListPosts(t *testing.T) {
 	// Cleanup
 	sql.DB.Client.MustExec("TRUNCATE TABLE posts")
 }
+
+func TestVotePost(t *testing.T) {
+	dbHost, dbPort, dbUsername, dbPassword, dbName := utils.LoadDBEnvVariables()
+
+	sql.NewSqlService(dbUsername, dbPassword, dbHost, dbPort, dbName)
+	post.NewPostService()
+
+	r := gin.Default()
+	BuildRouters(r)
+
+	// Create a new post
+	data := map[string]string{
+		"title": "Test title",
+		"body":  "Test body",
+	}
+
+	jsonBytes, err := json.Marshal(data)
+	if err != nil {
+		panic(err)
+	}
+
+	w := httptest.NewRecorder()
+	req, _ := http.NewRequest("POST", "/posts", bytes.NewBuffer(jsonBytes))
+
+	r.ServeHTTP(w, req)
+	assert.Equal(t, 200, w.Code)
+
+	var response struct {
+		Id        string    `json:"id"`
+		Title     string    `json:"title"`
+		Body      string    `json:"body"`
+		Votes     int       `json:"votes"`
+		Timestamp time.Time `json:"timestamp"`
+	}
+
+	err = json.Unmarshal(w.Body.Bytes(), &response)
+	if err != nil {
+		panic(err)
+	}
+
+	// Upvote
+	var request struct {
+		Id       string `json:"id"`
+		IsUpvote bool   `json:"is_upvote"`
+	}
+
+	request.Id = response.Id
+	request.IsUpvote = true
+
+	jsonBytes, err = json.Marshal(request)
+	if err != nil {
+		panic(err)
+	}
+
+	w = httptest.NewRecorder()
+	req, _ = http.NewRequest("POST", "/posts/vote", bytes.NewBuffer(jsonBytes))
+
+	r.ServeHTTP(w, req)
+	assert.Equal(t, 200, w.Code)
+
+	var voteResponse map[string]string
+	err = json.Unmarshal(w.Body.Bytes(), &voteResponse)
+	if err != nil {
+		panic(err)
+	}
+
+	assert.Equal(t, "Upvoted", voteResponse["status"])
+
+	// Downvote
+	request.IsUpvote = false
+
+	jsonBytes, err = json.Marshal(request)
+	if err != nil {
+		panic(err)
+	}
+
+	w = httptest.NewRecorder()
+	req, _ = http.NewRequest("POST", "/posts/vote", bytes.NewBuffer(jsonBytes))
+
+	r.ServeHTTP(w, req)
+	assert.Equal(t, 200, w.Code)
+
+	err = json.Unmarshal(w.Body.Bytes(), &voteResponse)
+	if err != nil {
+		panic(err)
+	}
+
+	assert.Equal(t, "Downvoted", voteResponse["status"])
+
+	// Cleanup
+	sql.DB.Client.MustExec("TRUNCATE TABLE posts")
+}
