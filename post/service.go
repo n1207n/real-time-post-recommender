@@ -1,7 +1,6 @@
 package post
 
 import (
-	"fmt"
 	"github.com/google/uuid"
 	"github.com/n1207n/real-time-post-recommender/sql"
 )
@@ -39,11 +38,28 @@ func (s *PostService) Create(newPost *Post) uuid.UUID {
 func (s *PostService) List(limit int, offset int) []Post {
 	var results []Post
 
-	stmt := fmt.Sprintf("SELECT * FROM posts LIMIT %d OFFSET %d", limit, offset)
-	err := sql.DB.Client.Select(&results, stmt)
+	err := sql.DB.Client.Select(&results, "SELECT * FROM posts LIMIT $1 OFFSET $2", limit, offset)
 	if err != nil {
 		panic(err)
 	}
 
 	return results
+}
+
+func (s *PostService) Vote(postId uuid.UUID, isUpvote bool) error {
+	var post Post
+
+	err := sql.DB.Client.Get(&post, "SELECT * FROM posts WHERE id = $1", postId.String())
+	if err != nil {
+		return err
+	}
+
+	if isUpvote {
+		post.Votes += 1
+	} else {
+		post.Votes -= 1
+	}
+
+	_, err = sql.DB.Client.Exec(`UPDATE posts SET votes = $1 WHERE id = $2`, post.Votes, postId.String())
+	return err
 }
