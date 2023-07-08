@@ -1,10 +1,22 @@
 # real-time-post-recommender
 Real-time post recommender based on old hackernews ranking algo
 
+## TODO
+- [ ] Return top ranked posts per date from redis
+  - Service layer
+  - Web API layer
+  - Cache ranking stats (# of posts, Avg generated score)
+- [ ] Gravity adjustment based on ranking stats
+- [ ] Simulator based on read-write ratio?
+- [ ] Code & Test refactorings
+
 ## Prerequisites
 - Go 1.20
 - Docker & docker-compose
 - golang-migrate
+
+## Setup
+- Create `.env` in `/deployments` folder
 
 ## Commands
 ### Run docker-compose
