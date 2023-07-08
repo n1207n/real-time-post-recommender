@@ -2,6 +2,7 @@ package post
 
 import (
 	"fmt"
+	"github.com/google/uuid"
 	"github.com/n1207n/real-time-post-recommender/sql"
 )
 
@@ -21,14 +22,18 @@ func NewPostService() *PostService {
 	return PostServiceInstance
 }
 
-func (s *PostService) Create(newPost *Post) {
-	stmt := sql.DB.Client.Rebind(
-		"INSERT INTO posts (id, title, body, votes, timestamp) VALUES (:id, :title, :body, :votes, :timestamp)",
-	)
-	_, err := s.db.Client.NamedExec(stmt, newPost)
+func (s *PostService) Create(newPost *Post) uuid.UUID {
+	var lastInsertedUUID uuid.UUID
+
+	err := s.db.Client.QueryRow(
+		"INSERT INTO posts (id, title, body, votes, timestamp) VALUES ($1, $2, $3, $4, $5) RETURNING id",
+		newPost.ID, newPost.Title, newPost.Body, newPost.Votes, newPost.Timestamp,
+	).Scan(&lastInsertedUUID)
 	if err != nil {
 		panic(err)
 	}
+
+	return lastInsertedUUID
 }
 
 func (s *PostService) List(limit int, offset int) []Post {
