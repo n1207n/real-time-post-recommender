@@ -13,15 +13,30 @@ import (
 	"github.com/stretchr/testify/assert"
 	"net/http"
 	"net/http/httptest"
+	"sync"
 	"testing"
 	"time"
 )
 
-func TestCreatePost(t *testing.T) {
-	dbHost, dbPort, dbUsername, dbPassword, dbName := utils.LoadDBEnvVariables()
+func setUp() func() {
+	once := sync.Once{}
+	once.Do(func() {
+		dbHost, dbPort, dbUsername, dbPassword, dbName := utils.LoadDBEnvVariables()
 
-	sql.NewSqlService(dbUsername, dbPassword, dbHost, dbPort, dbName)
-	post.NewPostService()
+		sql.NewSqlService(dbUsername, dbPassword, dbHost, dbPort, dbName)
+		post.NewPostService()
+	})
+
+	// Teardown function as return value
+	return func() {
+		sql.DB.Client.MustExec("TRUNCATE TABLE posts")
+		return
+	}
+}
+
+func TestCreatePost(t *testing.T) {
+	teardown := setUp()
+	defer teardown()
 
 	r := gin.Default()
 	BuildRouters(r)
@@ -51,16 +66,11 @@ func TestCreatePost(t *testing.T) {
 
 	assert.Equal(t, data["title"], response["title"])
 	assert.Equal(t, data["body"], response["body"])
-
-	// Cleanup
-	sql.DB.Client.MustExec("TRUNCATE TABLE posts")
 }
 
 func TestListPosts(t *testing.T) {
-	dbHost, dbPort, dbUsername, dbPassword, dbName := utils.LoadDBEnvVariables()
-
-	sql.NewSqlService(dbUsername, dbPassword, dbHost, dbPort, dbName)
-	post.NewPostService()
+	teardown := setUp()
+	defer teardown()
 
 	r := gin.Default()
 	BuildRouters(r)
@@ -112,16 +122,11 @@ func TestListPosts(t *testing.T) {
 
 	assert.NotNil(t, response)
 	assert.Equal(t, dataN, len(response.Data))
-
-	// Cleanup
-	sql.DB.Client.MustExec("TRUNCATE TABLE posts")
 }
 
 func TestGetPost(t *testing.T) {
-	dbHost, dbPort, dbUsername, dbPassword, dbName := utils.LoadDBEnvVariables()
-
-	sql.NewSqlService(dbUsername, dbPassword, dbHost, dbPort, dbName)
-	post.NewPostService()
+	teardown := setUp()
+	defer teardown()
 
 	r := gin.Default()
 	BuildRouters(r)
@@ -171,16 +176,11 @@ func TestGetPost(t *testing.T) {
 	assert.NotNil(t, response)
 	assert.Equal(t, data["title"], response.Title)
 	assert.Equal(t, data["body"], response.Body)
-
-	// Cleanup
-	sql.DB.Client.MustExec("TRUNCATE TABLE posts")
 }
 
 func TestVotePost(t *testing.T) {
-	dbHost, dbPort, dbUsername, dbPassword, dbName := utils.LoadDBEnvVariables()
-
-	sql.NewSqlService(dbUsername, dbPassword, dbHost, dbPort, dbName)
-	post.NewPostService()
+	teardown := setUp()
+	defer teardown()
 
 	redisHost, redisPort, redisName := utils.LoadRedisEnvVariables()
 	cache.NewCacheService(redisHost, redisPort, redisName)
@@ -279,7 +279,4 @@ func TestVotePost(t *testing.T) {
 	result, keyErr = cache.Cache.RedisClient.Exists(ctx, key).Result()
 	assert.NoError(t, keyErr)
 	assert.Equal(t, result, int64(1))
-
-	// Cleanup
-	sql.DB.Client.MustExec("TRUNCATE TABLE posts")
 }

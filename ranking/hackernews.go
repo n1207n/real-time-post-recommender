@@ -37,7 +37,6 @@ func (r *HackerNewsRanker) calculateScore(points int, creationTime time.Time, gr
 
 func (r *HackerNewsRanker) PushPostScore(p *post.Post) error {
 	ctx := r.CacheInstance.Ctx
-
 	key := fmt.Sprintf("post-scores-%s", p.Timestamp.Format("2006-01-02"))
 
 	// TODO: Dynamically adjust gravity based on the # of posts and average gravity or something else
@@ -56,4 +55,19 @@ func (r *HackerNewsRanker) PushPostScore(p *post.Post) error {
 
 func (r *HackerNewsRanker) computeGravity() float64 {
 	return 1.0
+}
+
+func (r *HackerNewsRanker) GetTopRankedPosts(date time.Time, n int) []post.Post {
+	ctx := r.CacheInstance.Ctx
+	key := fmt.Sprintf("post-scores-%s", date.Format("2006-01-02"))
+
+	var topPosts []post.Post
+
+	postIds, err := cache.Cache.RedisClient.ZRevRange(ctx, key, 0, int64(n)).Result()
+	if err != nil {
+		return topPosts
+	}
+
+	topPosts = post.PostServiceInstance.FilterByIDs(postIds)
+	return topPosts
 }

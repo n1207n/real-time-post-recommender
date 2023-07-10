@@ -2,6 +2,7 @@ package post
 
 import (
 	"github.com/google/uuid"
+	"github.com/lib/pq"
 	"github.com/n1207n/real-time-post-recommender/sql"
 )
 
@@ -39,6 +40,17 @@ func (s *PostService) List(limit int, offset int) []Post {
 	results := make([]Post, limit)
 
 	err := sql.DB.Client.Select(&results, "SELECT * FROM posts LIMIT $1 OFFSET $2", limit, offset)
+	if err != nil {
+		panic(err)
+	}
+
+	return results
+}
+
+func (s *PostService) FilterByIDs(idArr []string) []Post {
+	results := make([]Post, len(idArr))
+
+	err := sql.DB.Client.Select(&results, "SELECT * FROM posts WHERE id = ANY($1)", pq.Array(idArr))
 	if err != nil {
 		panic(err)
 	}

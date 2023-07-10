@@ -33,6 +33,11 @@ services:
       - POSTGRES_DB=${TEST_DB_NAME}
     volumes:
       - db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   migrate:
     image: migrate/migrate:v4.16.2
@@ -49,7 +54,8 @@ services:
     command: ["up"]
     restart: on-failure
     depends_on:
-      - db
+      db:
+        condition: service_healthy
 
   redis:
     image: redis
