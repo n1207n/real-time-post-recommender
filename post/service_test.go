@@ -29,7 +29,7 @@ func setUp() func() {
 
 	// Teardown function as return value
 	return func() {
-		sql.DB.Client.MustExec("TRUNCATE TABLE posts")
+		// sql.DB.Client.MustExec("TRUNCATE TABLE posts")
 	}
 }
 
@@ -41,12 +41,12 @@ func TestPostService_Create(t *testing.T) {
 	dbId := postService.Create(*newPost)
 
 	// Verify that the post is created successfully
-	var post Post
-	err := sql.DB.Client.Get(&post, "SELECT * FROM posts WHERE id = $1", dbId.String())
+	p, err := postService.GetByID(dbId)
 	assert.NoError(t, err)
 
 	// Perform assertions
-	assert.NotEqual(t, uuid.Nil, newPost.ID)
+	assert.NotEqual(t, uuid.Nil, p.ID)
+	assert.Equal(t, newPost.ID, p.ID)
 }
 
 func TestPostService_List(t *testing.T) {
@@ -54,7 +54,7 @@ func TestPostService_List(t *testing.T) {
 	defer teardown()
 
 	const dataN = 10
-	for range [dataN]int{} {
+	for i := 0; i < dataN; i++ {
 		newPost := NewPost("Test Title", "Test Body")
 		postService.Create(*newPost)
 	}

@@ -28,6 +28,7 @@ var (
 	date       = time.Now()
 	redisKey   = fmt.Sprintf("post-scores-%s", date.Format("2006-01-02"))
 	ctx        context.Context
+	postCount  int
 )
 
 func setUp() func() {
@@ -47,8 +48,8 @@ func setUp() func() {
 
 	// Teardown function as return value
 	return func() {
-		sql.DB.Client.MustExec("TRUNCATE TABLE posts")
-		ranker.CacheInstance.RedisClient.Del(ctx, redisKey)
+		// sql.DB.Client.MustExec("TRUNCATE TABLE posts")
+		// ranker.CacheInstance.RedisClient.Del(ctx, redisKey)
 	}
 }
 
@@ -88,7 +89,13 @@ func TestHackerNewsRanker_GetTopRankedPosts(t *testing.T) {
 	teardown := setUp()
 	defer teardown()
 
-	for i := 0; i < 50; i++ {
+	err := sql.DB.Client.QueryRow("SELECT COUNT(*) FROM posts").Scan(&postCount)
+	if err != nil {
+		panic(err)
+	}
+
+	const dataN = 50
+	for i := 0; i < dataN; i++ {
 		newPost := post.NewPost(fmt.Sprintf("Test Title %d", i), fmt.Sprintf("Test Body %d", i))
 		newPost.Timestamp = date
 		post.PostServiceInstance.Create(*newPost)
@@ -103,10 +110,10 @@ func TestHackerNewsRanker_GetTopRankedPosts(t *testing.T) {
 	}
 
 	// Retrieve the top ranked posts
-	topPosts := ranker.GetTopRankedPosts(date, 50)
+	topPosts := ranker.GetTopRankedPosts(date, dataN)
 
 	// Assertions
 	assert.NotNil(t, topPosts)
-	assert.Equal(t, 50, len(topPosts))
+	assert.Equal(t, dataN, len(topPosts))
 	// Assert the order of the top posts based on their scores
 }
