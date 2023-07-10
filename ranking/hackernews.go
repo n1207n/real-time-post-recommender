@@ -63,7 +63,7 @@ func (r *HackerNewsRanker) GetTopRankedPosts(date time.Time, n int) []post.Post 
 
 	var topPosts []post.Post
 
-	postIds, err := cache.Cache.RedisClient.ZRevRange(ctx, key, 0, int64(n)).Result()
+	postIds, err := cache.Cache.RedisClient.ZRevRange(ctx, key, 0, int64(n-1)).Result()
 	if err != nil {
 		return topPosts
 	}
