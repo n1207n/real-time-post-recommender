@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/n1207n/real-time-post-recommender/cache"
 	"github.com/n1207n/real-time-post-recommender/post"
+	"github.com/n1207n/real-time-post-recommender/sql"
 	"github.com/n1207n/real-time-post-recommender/utils"
 	"github.com/stretchr/testify/assert"
 	"math"
@@ -13,10 +14,15 @@ import (
 )
 
 var (
-	redisHost string
-	redisPort int
-	redisDb   int
-	ranker    *HackerNewsRanker
+	redisHost  string
+	redisPort  int
+	redisDb    int
+	dbHost     string
+	dbPort     int
+	dbUsername string
+	dbPassword string
+	dbName     string
+	ranker     *HackerNewsRanker
 )
 
 func setUp() {
@@ -26,6 +32,11 @@ func setUp() {
 	ranker = &HackerNewsRanker{
 		CacheInstance: cache.Cache,
 	}
+
+	dbHost, dbPort, dbUsername, dbPassword, dbName = utils.LoadDBEnvVariables()
+
+	sql.NewSqlService(dbUsername, dbPassword, dbHost, dbPort, dbName)
+	post.NewPostService()
 }
 
 func TestHackerNewsRanker_PushPostScore(t *testing.T) {
@@ -62,4 +73,34 @@ func TestHackerNewsRanker_calculateScore(t *testing.T) {
 		strconv.FormatFloat(expectedScore, 'f', 12, 64),
 		strconv.FormatFloat(score, 'f', 12, 64),
 	)
+}
+
+func TestHackerNewsRanker_GetTopRankedPosts(t *testing.T) {
+	setUp()
+
+	const dataN = 50
+	for range [dataN]int{} {
+		newPost := post.NewPost("Test Title", "Test Body")
+		post.PostServiceInstance.Create(*newPost)
+
+		// Upvote the post
+		_, err := post.PostServiceInstance.Vote(newPost.ID, true)
+		assert.NoError(t, err)
+	}
+
+	// Retrieve the top ranked posts
+	topPosts, err := ranker.GetTopRankedPosts(dataN)
+
+	// Assertions
+	assert.NoError(t, err)
+	assert.NotNil(t, topPosts)
+	assert.Equal(t, dataN, len(topPosts))
+	// Assert the order of the top posts based on their scores
+
+	// Cleanup
+	key := fmt.Sprintf("post-scores-%s", time.Now().Format("2006-01-02"))
+	ctx := ranker.CacheInstance.Ctx
+
+	sql.DB.Client.MustExec("TRUNCATE TABLE posts")
+	ranker.CacheInstance.RedisClient.Del(ctx, key)
 }
