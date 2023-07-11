@@ -23,7 +23,7 @@ services:
       - REDIS_DB=${REDIS_DB}
 
   db:
-    image: postgres
+    image: postgres:15-alpine
     restart: always
     ports:
       - ${DB_PORT}:${DB_PORT}

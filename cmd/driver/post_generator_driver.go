@@ -1,19 +1,21 @@
 package main
 
 import (
-	"fmt"
 	"github.com/n1207n/real-time-post-recommender/post"
 	"gopkg.in/h2non/gentleman.v2"
 	"gopkg.in/h2non/gentleman.v2/plugins/body"
+	"log"
+	"math/rand"
 	"sync"
+	"time"
 )
 
-var _ gentleman.Client = gentleman.Client{}
-var _ post.Faker = post.Faker{}
+var _ = gentleman.Client{}
+var _ = post.Faker{}
 
 var (
-	apiClient *gentleman.Client = gentleman.New()
-	faker                       = &post.Faker{}
+	apiClient = gentleman.New()
+	faker     = &post.Faker{}
 )
 
 const (
@@ -34,41 +36,110 @@ func main() {
 	// Define base URL
 	apiClient.URL("http://localhost:8080")
 
-	fmt.Printf("Post fake data generator started\n")
+	log.Printf("Post fake data generator started\n")
 
-	for _ = range [WorkerN]int{} {
+	for i := 0; i < WorkerN; i++ {
 		wg.Add(1)
-		go createFakePosts(wg)
+		go createFakePostsAndVote(wg)
 	}
 
 	wg.Wait()
 }
 
-func createFakePosts(wg *sync.WaitGroup) {
+func createFakePostsAndVote(wg *sync.WaitGroup) {
 	for i := 0; i < DataN; i++ {
 		data := map[string]string{
 			"title": post.GeneratePostTitle(MinWord, MaxWord, faker),
 			"body":  post.GeneratePostBody(MinParagraph, MaxParagraph, MinSentence, MaxSentence, MinWord, MaxWord, faker),
 		}
 
+		// Create post
 		req := apiClient.Request()
 		req.Path("/posts")
 		req.Method("POST")
-
-		// Serialize
 		req.Use(body.JSON(data))
 
 		res, err := req.Send()
 		if err != nil {
-			fmt.Printf("Request error: %s\n", err)
+			log.Printf("Request error: %s\n", err)
 			continue
 		}
 		if !res.Ok {
-			fmt.Printf("Invalid server response: %d\n", res.StatusCode)
+			log.Printf("Invalid server response: %d\n", res.StatusCode)
 			continue
 		}
 
-		fmt.Printf("Status: %d - Body: %s\n\n", res.StatusCode, res.String())
+		// Parse createPost response
+		var postResponse struct {
+			Id        string    `json:"id"`
+			Title     string    `json:"title"`
+			Body      string    `json:"body"`
+			Votes     int       `json:"votes"`
+			Timestamp time.Time `json:"timestamp"`
+		}
+		err = res.JSON(&postResponse)
+		if err != nil {
+			log.Printf("Failed to parse JSON response: %d\n", res.StatusCode)
+			continue
+		}
+
+		// Generate random vote actions up to 100 times
+		voteCount := rand.Intn(100)
+		postId := postResponse.Id
+
+		for i := 0; i < voteCount; i++ {
+			req = apiClient.Request()
+			req.Path("/posts/vote")
+			req.Method("POST")
+
+			var request struct {
+				Id       string `json:"id"`
+				IsUpvote bool   `json:"is_upvote"`
+			}
+			request.Id = postId
+
+			if prob := rand.Float64(); prob <= 0.5 {
+				request.IsUpvote = false
+			} else {
+				request.IsUpvote = true
+			}
+
+			req.Use(body.JSON(request))
+
+			res, err = req.Send()
+			if err != nil {
+				log.Printf("Request error: %s\n", err)
+				continue
+			}
+			if !res.Ok {
+				log.Printf("Invalid server response: %d\n", res.StatusCode)
+				continue
+			}
+		}
+
+		// Query Post by ID
+		req = apiClient.Request()
+		req.Path("/posts/:id")
+		req.Param("id", postId)
+		req.Method("GET")
+
+		res, err = req.Send()
+		if err != nil {
+			log.Printf("Request error: %s\n", err)
+			continue
+		}
+		if !res.Ok {
+			log.Printf("Invalid server response: %d\n", res.StatusCode)
+			continue
+		}
+
+		err = res.JSON(&postResponse)
+		if err != nil {
+			log.Printf("Failed to parse JSON response: %d\n", res.StatusCode)
+			continue
+		}
+
+		log.Printf("ID: %s - VoteCount: %d - Final Votes: %d\n", postId, voteCount, postResponse.Votes)
 	}
 
 	wg.Done()

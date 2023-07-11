@@ -5,6 +5,7 @@ import (
 	"github.com/n1207n/real-time-post-recommender/cache"
 	"github.com/n1207n/real-time-post-recommender/post"
 	"github.com/redis/go-redis/v9"
+	"log"
 	"math"
 	"time"
 )
@@ -42,10 +43,14 @@ func (r *HackerNewsRanker) PushPostScore(p *post.Post) error {
 	// TODO: Dynamically adjust gravity based on the # of posts and average gravity or something else
 	score := r.calculateScore(p.Votes, p.Timestamp, r.computeGravity())
 
-	err := cache.Cache.RedisClient.ZAdd(ctx, key, redis.Z{
+	// Upsert sorted set entry
+	err := cache.Cache.RedisClient.ZAddXX(ctx, key, redis.Z{
 		Score:  score,
 		Member: p.ID.String(),
 	}).Err()
+
+	log.Printf("PushPostScore - Redis Key: %s - Error: %v", key, err)
+
 	if err != nil {
 		return err
 	}
@@ -64,6 +69,9 @@ func (r *HackerNewsRanker) GetTopRankedPosts(date time.Time, n int) []post.Post 
 	var topPosts []post.Post
 
 	postIds, err := cache.Cache.RedisClient.ZRevRange(ctx, key, 0, int64(n-1)).Result()
+
+	log.Printf("GetTopRankedPost - Redis Key: %s - Error: %v", key, err)
+
 	if err != nil {
 		return topPosts
 	}

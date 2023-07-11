@@ -36,7 +36,9 @@ func NewCacheService(redisHost string, redisPort int, redisDB int) *CacheService
 		panic(fmt.Sprintf("Error initializing redis = {%s}", pong))
 	}
 
-	fmt.Printf("\nRedis started successfully: pong message = {%s}", pong)
+	fmt.Printf("\nRedis address: %s - Redis DB: %d\n", redisAddr, redisDB)
+
+	fmt.Printf("\nRedis started successfully: pong message = {%s}\n", pong)
 
 	return Cache
 }
