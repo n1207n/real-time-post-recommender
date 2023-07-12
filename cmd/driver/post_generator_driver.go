@@ -1,21 +1,20 @@
 package main
 
 import (
+	"github.com/imroc/req/v3"
 	"github.com/n1207n/real-time-post-recommender/post"
-	"gopkg.in/h2non/gentleman.v2"
-	"gopkg.in/h2non/gentleman.v2/plugins/body"
 	"log"
 	"math/rand"
 	"sync"
 	"time"
 )
 
-var _ = gentleman.Client{}
+var _ = req.Client{}
 var _ = post.Faker{}
 
 var (
-	apiClient = gentleman.New()
-	faker     = &post.Faker{}
+	client = req.C()
+	faker  = &post.Faker{}
 )
 
 const (
@@ -32,10 +31,6 @@ const (
 
 func main() {
 	wg := &sync.WaitGroup{}
-
-	// Define base URL
-	apiClient.URL("http://localhost:8080")
-
 	log.Printf("Post fake data generator started\n")
 
 	for i := 0; i < WorkerN; i++ {
@@ -48,24 +43,24 @@ func main() {
 
 func createFakePostsAndVote(wg *sync.WaitGroup) {
 	for i := 0; i < DataN; i++ {
-		data := map[string]string{
-			"title": post.GeneratePostTitle(MinWord, MaxWord, faker),
-			"body":  post.GeneratePostBody(MinParagraph, MaxParagraph, MinSentence, MaxSentence, MinWord, MaxWord, faker),
+		var createPostPayload struct {
+			Title string
+			Body  string
 		}
+		createPostPayload.Title = post.GeneratePostTitle(MinWord, MaxWord, faker)
+		createPostPayload.Body = post.GeneratePostBody(MinParagraph, MaxParagraph, MinSentence, MaxSentence, MinWord, MaxWord, faker)
 
 		// Create post
-		req := apiClient.Request()
-		req.Path("/posts")
-		req.Method("POST")
-		req.Use(body.JSON(data))
+		request := client.R()
+		request.SetBodyJsonMarshal(&createPostPayload)
+		response, err := request.Post("http://localhost:8080/posts")
 
-		res, err := req.Send()
 		if err != nil {
 			log.Printf("Request error: %s\n", err)
 			continue
 		}
-		if !res.Ok {
-			log.Printf("Invalid server response: %d\n", res.StatusCode)
+		if !response.IsSuccessState() {
+			log.Printf("Invalid server response: %d\n", response.StatusCode)
 			continue
 		}
 
@@ -77,9 +72,9 @@ func createFakePostsAndVote(wg *sync.WaitGroup) {
 			Votes     int       `json:"votes"`
 			Timestamp time.Time `json:"timestamp"`
 		}
-		err = res.JSON(&postResponse)
+		err = response.Unmarshal(&postResponse)
 		if err != nil {
-			log.Printf("Failed to parse JSON response: %d\n", res.StatusCode)
+			log.Printf("Failed to parse JSON response: %v\n", err.Error())
 			continue
 		}
 
@@ -88,54 +83,51 @@ func createFakePostsAndVote(wg *sync.WaitGroup) {
 		postId := postResponse.Id
 
 		for i := 0; i < voteCount; i++ {
-			req = apiClient.Request()
-			req.Path("/posts/vote")
-			req.Method("POST")
+			// Create post
+			voteRequest := client.R()
 
-			var request struct {
+			var votePayload struct {
 				Id       string `json:"id"`
 				IsUpvote bool   `json:"is_upvote"`
 			}
-			request.Id = postId
+			votePayload.Id = postId
 
 			if prob := rand.Float64(); prob <= 0.5 {
-				request.IsUpvote = false
+				votePayload.IsUpvote = false
 			} else {
-				request.IsUpvote = true
+				votePayload.IsUpvote = true
 			}
 
-			req.Use(body.JSON(request))
+			voteRequest.SetBodyJsonMarshal(&votePayload)
+			voteResponse, voteErr := voteRequest.Post("http://localhost:8080/posts/vote")
 
-			res, err = req.Send()
-			if err != nil {
-				log.Printf("Request error: %s\n", err)
+			if voteErr != nil {
+				log.Printf("Request error: %s\n", voteErr)
 				continue
 			}
-			if !res.Ok {
-				log.Printf("Invalid server response: %d\n", res.StatusCode)
+			if !voteResponse.IsSuccessState() {
+				log.Printf("Invalid server response: %d\n", voteResponse.StatusCode)
 				continue
 			}
 		}
 
 		// Query Post by ID
-		req = apiClient.Request()
-		req.Path("/posts/:id")
-		req.Param("id", postId)
-		req.Method("GET")
+		queryRequest := client.R()
+		queryRequest.SetPathParam("postId", postId)
+		queryResponse, queryErr := queryRequest.Get("http://localhost:8080/posts/{postId}")
 
-		res, err = req.Send()
-		if err != nil {
-			log.Printf("Request error: %s\n", err)
+		if queryErr != nil {
+			log.Printf("Request error: %s\n", queryErr)
 			continue
 		}
-		if !res.Ok {
-			log.Printf("Invalid server response: %d\n", res.StatusCode)
+		if !queryResponse.IsSuccessState() {
+			log.Printf("Invalid server response: %d\n", queryResponse.StatusCode)
 			continue
 		}
 
-		err = res.JSON(&postResponse)
+		err = queryResponse.Unmarshal(&postResponse)
 		if err != nil {
-			log.Printf("Failed to parse JSON response: %d\n", res.StatusCode)
+			log.Printf("Failed to parse JSON response: %v\n", err.Error())
 			continue
 		}
 

@@ -26,8 +26,7 @@ var (
 	dbName     string
 	ranker     *HackerNewsRanker
 	date       = time.Now()
-	redisKey   = fmt.Sprintf("post-scores-%s", date.Format("2006-01-02"))
-	ctx        context.Context
+	redisKey   = fmt.Sprintf("post-scores:%s", date.Format("2006-01-02"))
 	postCount  int
 )
 
@@ -38,7 +37,6 @@ func setUp() func() {
 
 		cache.NewCacheService(redisHost, redisPort, redisDb)
 		ranker = NewRanker()
-		ctx = ranker.CacheInstance.Ctx
 
 		dbHost, dbPort, dbUsername, dbPassword, dbName = utils.LoadDBEnvVariables()
 
@@ -62,6 +60,7 @@ func TestHackerNewsRanker_PushPostScore(t *testing.T) {
 	err := ranker.PushPostScore(newPost)
 	assert.NoError(t, err)
 
+	ctx := context.Background()
 	result, keyErr := ranker.CacheInstance.RedisClient.Exists(ctx, redisKey).Result()
 	assert.NoError(t, keyErr)
 	assert.Equal(t, result, int64(1))

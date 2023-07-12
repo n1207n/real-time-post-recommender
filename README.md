@@ -37,3 +37,11 @@ Real-time post recommender based on old hackernews ranking algo
 `docker-compose -f deployments/docker-compose.yaml --profile tools run migrate down`
 #### Fix migration
 `docker-compose -f deployments/docker-compose.yaml --profile tools run migrate force <VERSION>`
+
+## Debugging
+- Run docker-compose without web-server container
+  - `docker-compose -f deployments/docker-compose.yaml up db cache`
+- Load up .env in the terminal. Depending on the shell environment you're running, the command may be different.
+  - `source deployments/.env`
+- Run go build with your choice of debugger
+  - `go run cmd/server/web_server.go`

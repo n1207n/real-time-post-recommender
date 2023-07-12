@@ -2,6 +2,7 @@ package routing
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"github.com/gin-gonic/gin"
@@ -253,8 +254,8 @@ func TestVotePost(t *testing.T) {
 	assert.Equal(t, "Upvoted", voteResponse["status"])
 
 	// Ranking check
-	ctx := cache.Cache.Ctx
-	key := fmt.Sprintf("post-scores-%s", time.Now().Format("2006-01-02"))
+	ctx := context.Background()
+	key := fmt.Sprintf("post-scores:%s", time.Now().Format("2006-01-02"))
 	result, keyErr := cache.Cache.RedisClient.Exists(ctx, key).Result()
 	assert.NoError(t, keyErr)
 	assert.Equal(t, result, int64(1))

@@ -8,7 +8,6 @@ import (
 
 type CacheService struct {
 	RedisClient *redis.Client
-	Ctx         context.Context
 }
 
 // Compilation check
@@ -22,16 +21,17 @@ func NewCacheService(redisHost string, redisPort int, redisDB int) *CacheService
 	redisAddr := fmt.Sprintf("%s:%d", redisHost, redisPort)
 
 	redisClient := redis.NewClient(&redis.Options{
-		Addr: redisAddr,
-		DB:   redisDB,
+		Addr:     redisAddr,
+		Password: "",
+		DB:       redisDB,
 	})
 
 	Cache = &CacheService{
 		RedisClient: redisClient,
-		Ctx:         context.Background(),
 	}
 
-	pong, err := redisClient.Ping(Cache.Ctx).Result()
+	ctx := context.Background()
+	pong, err := redisClient.Ping(ctx).Result()
 	if err != nil {
 		panic(fmt.Sprintf("Error initializing redis = {%s}", pong))
 	}

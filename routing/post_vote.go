@@ -5,6 +5,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/n1207n/real-time-post-recommender/post"
 	"github.com/n1207n/real-time-post-recommender/ranking"
+	"log"
 	"net/http"
 )
 
@@ -18,17 +19,20 @@ func VotePost(context *gin.Context) {
 	var payload postVoteRequest
 
 	if err := context.ShouldBindJSON(&payload); err != nil {
+		log.Printf("VotePost - ShouldBindJSON - %v", err.Error())
 		context.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
 	p, err := post.PostServiceInstance.Vote(payload.ID, *payload.IsUpvote)
 	if err != nil {
+		log.Printf("VotePost - Vote - %v", err.Error())
 		context.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
 	if err := ranking.Ranker.PushPostScore(p); err != nil {
+		log.Printf("VotePost - PushPostScore - %v", err.Error())
 		context.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
